@@ -1,4 +1,4 @@
-package resourcestore
+package manifests
 
 import (
 	"context"
@@ -100,13 +100,13 @@ commandUpdated:
 	assert.Equal(t, configFiles[0].CommandUpdated.Generators, configFiles[0].CommandUpdated.Generators)
 }
 
-func setup(t *testing.T, configFileBody string) (*fileResourceStore, func()) {
+func setup(t *testing.T, configFileBody string) (*configAware, func()) {
 	manifests := kubernetes.NewManifests(kubernetes.ConstNamespacer("default"), log.NewLogfmtLogger(os.Stdout))
 	baseDir, cleanup := testfiles.TempDir(t)
 	if len(configFileBody) > 0 {
 		ioutil.WriteFile(filepath.Join(baseDir, ConfigFilename), []byte(configFileBody), 0600)
 	}
-	frs, err := NewFileResourceStore(baseDir, []string{baseDir}, manifests)
+	frs, err := NewConfigAware(baseDir, []string{baseDir}, manifests)
 	assert.NoError(t, err)
 	return frs, cleanup
 }
@@ -219,7 +219,7 @@ spec:
       - image: repo/image:tag
         name: greeter
 `
-	patchFilePath := filepath.Join(frs.baseDir, "patchfile.yaml")
+	patchFilePath := filepath.Join(frs.rawfiles.baseDir, "patchfile.yaml")
 	patch, err := ioutil.ReadFile(patchFilePath)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPatch, string(patch))
